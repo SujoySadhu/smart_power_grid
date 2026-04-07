@@ -207,3 +207,12 @@ set_property IOSTANDARD  LVCMOS33 [get_ports {an[3]}]
 ## set_property PACKAGE_PIN V7 [get_ports dp]
 ## set_property IOSTANDARD LVCMOS33 [get_ports dp]
 ## ============================================================================
+
+## ============================================================================
+## Timing Constraints: False Paths
+## The debounced reset (btnC) is asynchronous to logic timing — exclude from
+## timing analysis to prevent false violations on the reset tree.
+## ============================================================================
+set_false_path -from [get_ports btnC]
+set_false_path -from [get_ports btnU]
+

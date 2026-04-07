@@ -1,43 +1,44 @@
 // ============================================================================
 // Module      : bram_controller
 // Project     : Autonomous Smart Power Grid Controller
-// Target      : Artix-7 Basys 3
-// Description : Single-port synchronous BRAM wrapper. 10 entries × 28 bits.
+// Description : Single-port synchronous BRAM wrapper. 10 entries × 38 bits.
 //               Memory Map per entry (address 0–9 = Area 0–Area 9):
+//                 [37:28] = Level Threshold (10-bit, 0-1000)
 //                 [27:24] = Priority Level  (4-bit,  0–9)
 //                 [23:16] = Usage Rate      (8-bit,  units/sec, 0–255)
 //                 [15:0]  = Cost Accumulator(16-bit, monetary total, 0–65535)
-//
-//               The (* ram_style = "block" *) attribute instructs Vivado to
-//               map this memory explicitly into a Block RAM tile (RAMB18E1)
-//               instead of distributed LUT-based RAM.
-//
-//               Read latency : 1 clock cycle (synchronous registered output)
-//               Write mode   : Write-First (dout reflects new data on write)
-// Coding Style: Synchronous Verilog-2001
 // ============================================================================
 `timescale 1ns / 1ps
 
 module bram_controller (
     input  wire        clk,
     input  wire        we,        // Write enable (active HIGH)
-    input  wire [3:0]  addr,      // Address: 0–9 (values ≥10 are unused)
-    input  wire [27:0] din,       // Write data: {priority[3:0], usage[7:0], cost[15:0]}
-    output wire [27:0] dout       // Read data (combinational, valid same cycle as addr)
+    input  wire [3:0]  addr,      // Address: 0–9
+    input  wire [37:0] din,       // Write data
+    output wire [37:0] dout       // Read data
 );
 
-    // -------------------------------------------------------------------------
-    // RAM Declaration
-    // Use distributed (LUT) RAM — only 16 entries × 28 bits, too shallow for
-    // a Block RAM tile. Distributed RAM is faster and more area-efficient here.
-    // -------------------------------------------------------------------------
-    (* ram_style = "distributed" *) reg [27:0] mem [0:15]; // 16-entry array
+    (* ram_style = "distributed" *) reg [37:0] mem [0:15];
 
-    // -------------------------------------------------------------------------
-    // Synchronous Read-Write Operation (Write-First mode)
-    // Write-First: If we=1, dout reflects the newly written din value.
-    // This avoids a stale-read issue when the FSM reads back after writing.
-    // -------------------------------------------------------------------------
+    initial begin
+        // {level[9:0], priority[3:0], usage[7:0], cost[15:0]}
+        mem[0]  = {10'd450, 4'd9, 8'd3,  16'h0000};
+        mem[1]  = {10'd400, 4'd8, 8'd4,  16'h0000};
+        mem[2]  = {10'd350, 4'd7, 8'd4,  16'h0000};
+        mem[3]  = {10'd300, 4'd7, 8'd5,  16'h0000};
+        mem[4]  = {10'd250, 4'd5, 8'd5,  16'h0000};
+        mem[5]  = {10'd200, 4'd5, 8'd6,  16'h0000};
+        mem[6]  = {10'd150, 4'd3, 8'd6,  16'h0000};
+        mem[7]  = {10'd100, 4'd3, 8'd8,  16'h0000};
+        mem[8]  = {10'd50,  4'd1, 8'd10, 16'h0000};
+        mem[9]  = {10'd0,   4'd0, 8'd12, 16'h0000};
+        
+        // Ensure unused entries are zeroed out
+        mem[10] = 38'd0; mem[11] = 38'd0;
+        mem[12] = 38'd0; mem[13] = 38'd0;
+        mem[14] = 38'd0; mem[15] = 38'd0;
+    end
+
     // Combinational read (0-cycle latency)
     assign dout = mem[addr];
 

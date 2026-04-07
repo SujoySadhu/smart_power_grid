@@ -56,12 +56,11 @@ module top_level (
     // BRAM interface wires (FSM → BRAM)
     wire        bram_we;
     wire [3:0]  bram_addr;
-    wire [27:0] bram_din;
-    wire [27:0] bram_dout;
+    wire [37:0] bram_din;
+    wire [37:0] bram_dout;
 
     // ALU interface wires
     wire [1:0]  alu_op;
-    wire [3:0]  alu_priority;
     wire [7:0]  alu_usage_rate;
     wire [15:0] alu_cost_acc;
     wire        alu_area_active;
@@ -125,7 +124,6 @@ module top_level (
         .clk                (clk),
         .rst                (rst_clean),
         .op                 (alu_op),
-        .priority_in        (alu_priority),
         .usage_rate         (alu_usage_rate),
         .cost_acc_in        (alu_cost_acc),
         .area_active        (alu_area_active),
@@ -147,6 +145,9 @@ module top_level (
         .area_id            (sw[3:0]),
         .data_entry         (sw[11:4]),
         .mode_sel           (sw[12]),
+        .mode_usage         (sw[13]),
+        .freeze             (sw[14]),
+        .mode_level         (sw[15]),
         // BRAM
         .bram_we            (bram_we),
         .bram_addr          (bram_addr),
@@ -154,7 +155,6 @@ module top_level (
         .bram_dout          (bram_dout),
         // ALU
         .alu_op             (alu_op),
-        .alu_priority       (alu_priority),
         .alu_usage_rate     (alu_usage_rate),
         .alu_cost_acc       (alu_cost_acc),
         .alu_area_active    (alu_area_active),
@@ -190,7 +190,12 @@ module top_level (
     // =========================================================================
     assign led[9:0]   = status_reg;        // Virtual Circuit Breakers (1=ON, 0=OFF)
     assign led[10]    = overload_flag;      // Overload Flag
-    assign led[13:11] = fsm_state;          // FSM State debug output
-    assign led[15:14] = 2'b00;             // Unused
+    assign led[11]    = (fsm_state == 3'b101); // Billing indicator (ON during bill display)
+    // led[15:12] echo unused switches to suppress no-load / constant-driver warnings
+    assign led[12]    = sw[12];
+    assign led[13]    = sw[13];
+    assign led[14]    = sw[14];
+    assign led[15]    = sw[15];
 
 endmodule
+

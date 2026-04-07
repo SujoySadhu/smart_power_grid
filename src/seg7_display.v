@@ -6,6 +6,9 @@
 //               Normal mode:  [State Character] [Balance 3 digits]
 //               Billing mode: [Area Number 0-9] [Bill 3 digits]
 //
+//               BCD conversion is REGISTERED using a subtraction-based
+//               approach to avoid deep combinational divide paths.
+//
 //               Basys 3 Hardware Notes:
 //                 - Anodes   (an[3:0])  : ACTIVE LOW → 0 = digit ON
 //                 - Cathodes (seg[6:0]) : ACTIVE LOW → 0 = segment ON
@@ -28,11 +31,59 @@ module seg7_display (
 );
 
     // =========================================================================
-    // BCD Decomposition (10-bit input, displays 0–999)
+    // REGISTERED BCD Decomposition
+    // Uses a simple 2-stage pipeline with subtraction (no division).
+    //   Stage 1: Compute hundreds digit and remainder
+    //   Stage 2: Compute tens and ones digits from remainder
     // =========================================================================
-    wire [3:0] digit_h = balance / 10'd100;
-    wire [3:0] digit_t = (balance % 10'd100) / 10'd10;
-    wire [3:0] digit_o = balance % 10'd10;
+    reg [3:0] digit_h;  // Hundreds
+    reg [3:0] digit_t;  // Tens
+    reg [3:0] digit_o;  // Ones
+
+    // Stage 1 intermediates
+    reg [3:0] hund_s1;
+    reg [6:0] rem_s1;   // Remainder after hundreds (0–99), 7 bits enough
+
+    // Stage 1: Hundreds extraction (registered)
+    always @(posedge clk) begin
+        if (rst) begin
+            hund_s1 <= 4'd0;
+            rem_s1  <= 7'd0;
+        end else begin
+            if      (balance >= 10'd900) begin hund_s1 <= 4'd9; rem_s1 <= balance - 10'd900; end
+            else if (balance >= 10'd800) begin hund_s1 <= 4'd8; rem_s1 <= balance - 10'd800; end
+            else if (balance >= 10'd700) begin hund_s1 <= 4'd7; rem_s1 <= balance - 10'd700; end
+            else if (balance >= 10'd600) begin hund_s1 <= 4'd6; rem_s1 <= balance - 10'd600; end
+            else if (balance >= 10'd500) begin hund_s1 <= 4'd5; rem_s1 <= balance - 10'd500; end
+            else if (balance >= 10'd400) begin hund_s1 <= 4'd4; rem_s1 <= balance - 10'd400; end
+            else if (balance >= 10'd300) begin hund_s1 <= 4'd3; rem_s1 <= balance - 10'd300; end
+            else if (balance >= 10'd200) begin hund_s1 <= 4'd2; rem_s1 <= balance - 10'd200; end
+            else if (balance >= 10'd100) begin hund_s1 <= 4'd1; rem_s1 <= balance - 10'd100; end
+            else                         begin hund_s1 <= 4'd0; rem_s1 <= balance[6:0];       end
+        end
+    end
+
+    // Stage 2: Tens and ones extraction from remainder (registered)
+    always @(posedge clk) begin
+        if (rst) begin
+            digit_h <= 4'd0;
+            digit_t <= 4'd0;
+            digit_o <= 4'd0;
+        end else begin
+            digit_h <= hund_s1;
+
+            if      (rem_s1 >= 7'd90) begin digit_t <= 4'd9; digit_o <= rem_s1 - 7'd90; end
+            else if (rem_s1 >= 7'd80) begin digit_t <= 4'd8; digit_o <= rem_s1 - 7'd80; end
+            else if (rem_s1 >= 7'd70) begin digit_t <= 4'd7; digit_o <= rem_s1 - 7'd70; end
+            else if (rem_s1 >= 7'd60) begin digit_t <= 4'd6; digit_o <= rem_s1 - 7'd60; end
+            else if (rem_s1 >= 7'd50) begin digit_t <= 4'd5; digit_o <= rem_s1 - 7'd50; end
+            else if (rem_s1 >= 7'd40) begin digit_t <= 4'd4; digit_o <= rem_s1 - 7'd40; end
+            else if (rem_s1 >= 7'd30) begin digit_t <= 4'd3; digit_o <= rem_s1 - 7'd30; end
+            else if (rem_s1 >= 7'd20) begin digit_t <= 4'd2; digit_o <= rem_s1 - 7'd20; end
+            else if (rem_s1 >= 7'd10) begin digit_t <= 4'd1; digit_o <= rem_s1 - 7'd10; end
+            else                      begin digit_t <= 4'd0; digit_o <= rem_s1[3:0];     end
+        end
+    end
 
     // =========================================================================
     // 7-Segment BCD Decoder (active-low cathodes)

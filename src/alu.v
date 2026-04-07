@@ -19,8 +19,7 @@
 //               2'b01 – CONSUME
 //                       Subtractor : balance_out = balance_in – usage_rate
 //                                    (saturates at 0, no underflow)
-//                       MAC        : cost_acc_out = cost_acc_in + (usage_rate × price_tier)
-//                                    price_tier = priority_in + 1  (maps 0–9 → 1–10)
+//                       MAC        : cost_acc_out = cost_acc_in + (usage_rate × 2)
 //                                    cost_acc clamped at 16'hFFFF
 //                       Accumulate : total_demand_out = total_demand_in + usage_rate
 //                       (All operations only execute if area_active = 1)
@@ -45,7 +44,6 @@ module alu (
     input  wire [1:0]  op,
 
     // --- Per-Area Data Inputs (from BRAM via FSM) ---
-    input  wire [3:0]  priority_in,      // Area priority (0–9)
     input  wire [7:0]  usage_rate,       // Area consumption rate (units/sec)
     input  wire [15:0] cost_acc_in,      // Current cost accumulator
     input  wire        area_active,      // 1 = area is currently ON (from status_reg)
