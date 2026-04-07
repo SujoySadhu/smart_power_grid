@@ -1,0 +1,10 @@
++====================+===================+=========================================+
+| Launch Setup Clock | Launch Hold Clock | Pin                                     |
++====================+===================+=========================================+
+| sys_clk_pin        | sys_clk_pin       | u_fsm/FSM_sequential_fsm_state_reg[0]/D |
+| sys_clk_pin        | sys_clk_pin       | u_fsm/FSM_sequential_fsm_state_reg[1]/D |
+| sys_clk_pin        | sys_clk_pin       | u_fsm/FSM_sequential_fsm_state_reg[2]/D |
+| sys_clk_pin        | sys_clk_pin       | u_fsm/area_phase_reg[1]/D               |
+| sys_clk_pin        | sys_clk_pin       | u_fsm/area_phase_reg[2]/D               |
+| sys_clk_pin        | sys_clk_pin       | u_fsm/area_phase_reg[0]/D               |
++--------------------+-------------------+-----------------------------------------+
